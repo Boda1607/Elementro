@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elementro</title>
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#6100fe" />
+    <link rel="icon" href="favicon.ico" type="image/x-icon" />
+    <link rel="apple-touch-icon" sizes="180x180" href="images/1.png" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1a1a1a; /* Dark background */
+            color: #e0e0e0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+            overflow-x: hidden; /* Prevent horizontal scrolling */
+        }
+
+        /* Controls Container for Search and Filters */
+        .controls-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 25px;
+            width: 100%;
+            max-width: 1300px; /* Align with table width */
+            padding: 10px;
+            background-color: #2a2a2a;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 5px;
+        }
+
+        .control-group label {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #ccc;
+        }
+
+        .control-group input[type="text"],
+        .control-group select {
+            background-color: #3f3f3f;
+            border: 1px solid #555;
+            border-radius: 6px;
+            padding: 8px 12px;
+            color: #e0e0e0;
+            font-size: 0.95rem;
+            min-width: 150px;
+            max-width: 200px;
+            appearance: none; /* Remove default select arrow */
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            cursor: pointer;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .control-group input[type="text"]::placeholder {
+            color: #a0a0a0;
+        }
+
+        .control-group input[type="text"]:focus,
+        .control-group select:focus {
+            outline: none;
+            border-color: #8a2be2;
+            box-shadow: 0 0 0 3px rgba(138, 43, 226, 0.3);
+        }
+
+        /* Custom arrow for select (optional, if default is removed) */
+        .control-group select {
+            background-image: url('data:image/svg+xml;utf8,<svg fill="%23e0e0e0" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/><path d="M0 0h24v24H0z" fill="none"/></svg>');
+            background-repeat: no-repeat;
+            background-position: right 8px top 50%;
+            background-size: 24px auto;
+            padding-right: 30px; /* Make space for the custom arrow */
+        }
+
+
+        /* Periodic Table Grid Layout */
+        .periodic-table-grid {
+            display: grid;
+            grid-template-columns: repeat(18, minmax(0, 1fr)); /* 18 columns */
+            gap: 3px; /* Adjusted gap for a more compact look, consistent with series */
+            width: 100%;
+            max-width: 1300px; /* Increased max-width for overall table size consistency */
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+
+        /* Element Box Styling */
+        .element-box {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            aspect-ratio: 1 / 1; /* Make elements square */
+            background-color: #333;
+            border-radius: 8px;
+            padding: 2px;
+            cursor: pointer;
+            transition: transform 0.1s ease-in-out, box-shadow 0.1s ease-in-out;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 0.7rem; /* Smaller font for basic info */
+            position: relative; /* For atomic number positioning */
+        }
+
+        .element-box:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+        }
+
+        .element-box .atomic-number {
+            position: absolute;
+            top: 2px;
+            left: 4px;
+            font-size: 0.6em;
+            font-weight: 300;
+        }
+
+        .element-box .symbol {
+            font-size: 1.5em; /* Larger symbol */
+            font-weight: 600;
+            margin-bottom: 2px;
+            text-align: center;
+        }
+
+        .element-box .name {
+            font-size: 0.6em;
+            font-weight: 400;
+            text-align: center;
+            line-height: 1;
+        }
+
+        /* Type-based Background Colors (Matching image legend) */
+        .type-alkali-metal { background-color: #ff6347; } /* Tomato */
+        .type-alkaline-earth-metal { background-color: #ffd700; } /* Gold */
+        .type-transition-metal { background-color: #8a2be2; } /* BlueViolet */
+        .type-basic-metal { background-color: #4682b4; } /* SteelBlue */
+        .type-semimetal { background-color: #20b2aa; } /* LightSeaGreen */
+        .type-nonmetal { background-color: #3cb371; } /* MediumSeaGreen */
+        .type-halogen { background-color: #ff00ff; } /* Magenta */
+        .type-noble-gas { background-color: #6a5acd; } /* SlateBlue */
+        .type-lanthanide { background-color: #dda0dd; } /* Plum */
+        .type-actinide { background-color: #dc143c; } /* Crimson */
+        .type-unknown { background-color: #555; } /* Darker grey for unknown */
+
+        /* Placeholder for empty grid cells - now transparent and borderless */
+        .empty-cell {
+            visibility: hidden; /* Hides empty cells */
+            background-color: transparent !important; /* Ensures background is transparent */
+            border: none !important; /* Removes borders for empty cells */
+        }
+
+        /* Styling for the Lanthanide/Actinide placeholders in the main table */
+        .element-box.placeholder {
+            background-color: #444; /* Slightly different background for placeholders */
+            color: #ccc;
+            font-weight: 500;
+            cursor: default;
+        }
+
+        /* Lanthanide/Actinide Series Container */
+        /*
+        .series-container {
+            display: grid;
+            grid-template-columns: repeat(18, minmax(0, 1fr)); // 18 equal-width columns
+            gap: 3px; // Compact spacing between grid items
+            width: 100%; // Full width of the container
+            max-width: 1300px; // Limit the width to maintain consistency with the main table
+            margin-top: 20px; // Add space above the container
+        }
+        */
+
+
+        #actinide-series,
+        #lanthanide-series {
+            display: grid;
+            grid-template-columns: repeat(15, minmax(0, 1fr)); /* Create 18 equal-width columns */
+            gap: 2.8px; /* Small gap for a compact, consistent layout */
+            width: 100%;
+            max-width: 1300px; /* Limit width for better table sizing on large screens */
+
+        }
+
+        /* Modal Styling */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+        }
+
+        .modal-overlay.open {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background-color: #2a2a2a;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
+            width: 90%;
+            max-width: 600px;
+            transform: scale(0.9);
+            transition: transform 0.3s ease-in-out;
+            position: relative;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            max-height: 90vh; /* Limit modal height */
+            overflow-y: auto; /* Enable scrolling for long content */
+        }
+
+        .modal-overlay.open .modal-content {
+            transform: scale(1);
+        }
+
+        .modal-close-button {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            color: #e0e0e0;
+            font-size: 1.8rem;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 50%;
+            transition: background-color 0.2s;
+        }
+
+        .modal-close-button:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .modal-title {
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+            color: #f0f0f0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            padding-bottom: 10px;
+        }
+
+        .modal-detail-item {
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+            line-height: 1.4;
+        }
+
+        .modal-detail-item strong {
+            color: #a8a8a8;
+            font-weight: 500;
+            margin-right: 8px;
+        }
+
+        /* Responsive Adjustments */
+        @media (max-width: 1024px) {
+            .periodic-table-grid, .series-container {
+                max-width: 900px;
+            }
+            .controls-container {
+                gap: 10px;
+                flex-direction: row;
+                justify-content: space-around;
+            }
+            .control-group input[type="text"],
+            .control-group select {
+                min-width: 120px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .periodic-table-grid, .series-container {
+                gap: 2px;
+                max-width: 100%;
+            }
+            .element-box {
+                font-size: 0.6rem;
+                border-radius: 4px;
+            }
+            .element-box .atomic-number {
+                font-size: 0.5em;
+                left: 2px;
+                top: 1px;
+            }
+            .element-box .symbol {
+                font-size: 1.2em;
+            }
+            .element-box .name {
+                font-size: 0.5em;
+            }
+            .modal-content {
+                padding: 20px;
+                width: 95%;
+            }
+            .modal-title {
+                font-size: 1.8rem;
+            }
+            .modal-detail-item {
+                font-size: 0.95rem;
+            }
+             .legend {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+            .controls-container {
+                display: grid;               /* Use grid layout */
+                grid-template-columns: repeat(2, 1fr);  /* 2 columns */
+                gap: 10px;                  /* Gap between items */
+                width: 100%;                /* Full width */
+                justify-items: stretch;     /* Make each control-group fill the column */
+            }
+
+            .control-group {
+                width: 100%;                /* Take full width of the grid cell */
+                align-items: center;        /* Keep vertical centering if flex */
+                display: flex;              /* if you want flex inside */
+            }
+            .control-group input[type="text"],
+            .control-group select {
+                width: 100%;
+                max-width: 250px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .periodic-table-grid, .series-container {
+                gap: 1px;
+            }
+            .element-box {
+                font-size: 0.45rem; /* Even smaller font size for very small screens */
+                padding: 0px;
+            }
+            .element-box .atomic-number {
+                font-size: 0.4em;
+            }
+            .element-box .symbol {
+                font-size: 0.9em;
+            }
+            .element-box .name {
+                display: none; /* Hide name on very small screens to save space */
+            }
+            .modal-detail-item {
+                font-size: 0.85rem;
+            }
+            .legend {
+                grid-template-columns: repeat(1, minmax(0, 1fr));
+            }
+
+            #actinide-series,
+            #lanthanide-series {
+            gap: 1px; /* Small gap for a compact, consistent layout */
+            }
+            .controls-container {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 8px;
+                width: 100%;
+                justify-items: stretch;
+            }
+
+            .control-group {
+                width: 100%;
+                align-items: center;
+                display: flex;
+            }
+            .control-group input[type="text"],
+            .control-group select {
+                width: 100%;
+                max-width: 250px;
+            }
+        }
+
+        /* ADJUSTED: Sticky footer styles */
+        footer {
+            margin-top: auto; /* Pushes the footer to the bottom */
+            margin-bottom: 2px; /* Space from the very bottom edge */
+            color: rgba(255,255,255,0.7);
+            font-size: 1.4rem; /* Adjusted for better readability */
+            text-align: center; /* Center the footer text */
+            width: 100%; /* Ensure footer spans full width */
+        }
+
+        footer a {
+            color: white;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+
+    </style>
+</head>
+<body>
+    <h1 class="text-3xl sm:text-4xl font-bold text-gray-100 mb-6 text-center">Periodic Table of the Elements</h1>
+
+    <div class="legend mb-8 p-4 bg-gray-800 rounded-lg shadow-lg grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 text-sm">
+        <div class="flex items-center gap-2">
+            <span class="w-4 h-4 rounded-full type-alkali-metal"></span> Alkali Metal
+        </div>
+        <div class="flex items-center gap-2">
+            <span class="w-4 h-4 rounded-full type-alkaline-earth-metal"></span> Alkaline Earth Metal
+        </div>
+        <div class="flex items-center gap-2">
+            <span class="w-4 h-4 rounded-full type-transition-metal"></span> Transition Metal
+        </div>
+        <div class="flex items-center gap-2">
+            <span class="w-4 h-4 rounded-full type-basic-metal"></span> Basic Metal
+        </div>
+        <div class="flex items-center gap-2">
+            <span class="w-4 h-4 rounded-full type-semimetal"></span> Semimetal
+        </div>
+        <div class="flex items-center gap-2">
+            <span class="w-4 h-4 rounded-full type-nonmetal"></span> Nonmetal
+        </div>
+        <div class="flex items-center gap-2">
+            <span class="w-4 h-4 rounded-full type-halogen"></span> Halogen
+        </div>
+        <div class="flex items-center gap-2">
+            <span class="w-4 h-4 rounded-full type-noble-gas"></span> Noble Gas
+        </div>
+        <div class="flex items-center gap-2">
+            <span class="w-4 h-4 rounded-full type-lanthanide"></span> Lanthanide
+        </div>
+        <div class="flex items-center gap-2">
+            <span class="w-4 h-4 rounded-full type-actinide"></span> Actinide
+        </div>
+    </div>
+
+    <!-- Search and Filter Controls -->
+    <div class="controls-container">
+        <div class="control-group">
+            <label for="search-input">Search Element:</label>
+            <input type="text" id="search-input" placeholder="Name or Symbol" onkeyup="filterElements()">
+        </div>
+
+        <div class="control-group">
+            <label for="type-filter">Type:</label>
+            <select id="type-filter" onchange="filterElements()">
+                <option value="All">All</option>
+                <option value="Alkali Metal">Alkali Metal</option>
+                <option value="Alkaline Earth Metal">Alkaline Earth Metal</option>
+                <option value="Transition Metal">Transition Metal</option>
+                <option value="Basic Metal">Basic Metal</option>
+                <option value="Semimetal">Semimetal</option>
+                <option value="Nonmetal">Nonmetal</option>
+                <option value="Halogen">Halogen</option>
+                <option value="Noble Gas">Noble Gas</option>
+                <option value="Lanthanide">Lanthanide</option>
+                <option value="Actinide">Actinide</option>
+            </select>
+        </div>
+
+        <div class="control-group">
+            <label for="period-filter">Period:</label>
+            <select id="period-filter" onchange="filterElements()">
+                <option value="All">All</option>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
+                <option value="7">7</option>
+            </select>
+        </div>
+
+        <div class="control-group">
+            <label for="group-filter">Group:</label>
+            <select id="group-filter" onchange="filterElements()">
+                <option value="All">All</option>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
+                <option value="7">7</option>
+                <option value="8">8</option>
+                <option value="9">9</option>
+                <option value="10">10</option>
+                <option value="11">11</option>
+                <option value="12">12</option>
+                <option value="13">13</option>
+                <option value="14">14</option>
+                <option value="15">15</option>
+                <option value="16">16</option>
+                <option value="17">17</option>
+                <option value="18">18</option>
+            </select>
+        </div>
+    </div>
+
+
+    <div id="periodic-table" class="periodic-table-grid">
+        <!-- Elements will be dynamically inserted here by JavaScript -->
+    </div>
+
+    <!-- Lanthanide and Actinide Series Container -->
+    <div id="lanthanide-series" class="series-container"></div>
+    <div id="actinide-series" class="series-container"></div>
+
+
+    <!-- Element Details Modal -->
+    <div id="element-details-modal" class="modal-overlay">
+        <div class="modal-content">
+            <button class="modal-close-button" onclick="closeModal()">&times;</button>
+            <h2 id="modal-title" class="modal-title"></h2>
+            <div id="modal-details">
+                <p class="modal-detail-item"><strong>Atomic Number:</strong> <span id="modal-atomic-number"></span></p>
+                <p class="modal-detail-item"><strong>Atomic Mass:</strong> <span id="modal-atomic-mass"></span></p>
+                <p class="modal-detail-item"><strong>Group:</strong> <span id="modal-group"></span></p>
+                <p class="modal-detail-item"><strong>Period:</strong> <span id="modal-period"></span></p>
+                <p class="modal-detail-item"><strong>Type:</strong> <span id="modal-type"></span></p>
+                <p class="modal-detail-item"><strong>Electron Config:</strong> <span id="modal-electron-config"></span></p>
+                <p class="modal-detail-item"><strong>State at STP:</strong> <span id="modal-state-stp"></span></p>
+                <p class="modal-detail-item"><strong>Melting Point:</strong> <span id="modal-melting-point"></span></p>
+                <p class="modal-detail-item"><strong>Boiling Point:</strong> <span id="modal-boiling-point"></span></p>
+            </div>
+            <p class="modal-detail-item mt-4 text-center text-gray-400 text-sm">More details may be available from external sources.</p>
+        </div>
+    </div>
+    <footer>
+        Made with ❤️ by <a href="https://abdelrahmanz.netlify.app/" target="_blank">AbdElRahman</a>
+    </footer>
+    <script>
+        // Array of periodic table elements with their properties
+        const elements = [
+            { id: 'H', atomicNumber: 1, symbol: 'H', name: 'Hydrogen', atomicMass: 1.008, group: '1', period: '1', type: 'Nonmetal', electronConfig: '1s¹', stateSTP: 'Gas', meltingPoint: '-259.16 °C (14.01 K)', boilingPoint: '-252.87 °C (20.28 K)', row: 1, column: 1 },
+            { id: 'He', atomicNumber: 2, symbol: 'He', name: 'Helium', atomicMass: 4.0026, group: '18', period: '1', type: 'Noble Gas', electronConfig: '1s²', stateSTP: 'Gas', meltingPoint: 'N/A', boilingPoint: '-268.93 °C (4.22 K)', row: 1, column: 18 },
+            { id: 'Li', atomicNumber: 3, symbol: 'Li', name: 'Lithium', atomicMass: 6.94, group: '1', period: '2', type: 'Alkali Metal', electronConfig: '[He] 2s¹', stateSTP: 'Solid', meltingPoint: '180.5 °C (453.6 K)', boilingPoint: '1342 °C (1615 K)', row: 2, column: 1 },
+            { id: 'Be', atomicNumber: 4, symbol: 'Be', name: 'Beryllium', atomicMass: 9.0122, group: '2', period: '2', type: 'Alkaline Earth Metal', electronConfig: '[He] 2s²', stateSTP: 'Solid', meltingPoint: '1287 °C (1560 K)', boilingPoint: '2470 °C (2743 K)', row: 2, column: 2 },
+            { id: 'B', atomicNumber: 5, symbol: 'B', name: 'Boron', atomicMass: 10.81, group: '13', period: '2', type: 'Semimetal', electronConfig: '[He] 2s² 2p¹', stateSTP: 'Solid', meltingPoint: '2075 °C (2348 K)', boilingPoint: '4000 °C (4273 K)', row: 2, column: 13 },
+            { id: 'C', atomicNumber: 6, symbol: 'C', name: 'Carbon', atomicMass: 12.011, group: '14', period: '2', type: 'Nonmetal', electronConfig: '[He] 2s² 2p²', stateSTP: 'Solid', meltingPoint: '3500 °C (3773 K)', boilingPoint: '4827 °C (5100 K)', row: 2, column: 14 },
+            { id: 'N', atomicNumber: 7, symbol: 'N', name: 'Nitrogen', atomicMass: 14.007, group: '15', period: '2', type: 'Nonmetal', electronConfig: '[He] 2s² 2p³', stateSTP: 'Gas', meltingPoint: '-210.0 °C (63.15 K)', boilingPoint: '-195.8 °C (77.35 K)', row: 2, column: 15 },
+            { id: 'O', atomicNumber: 8, symbol: 'O', name: 'Oxygen', atomicMass: 15.999, group: '16', period: '2', type: 'Nonmetal', electronConfig: '[He] 2s² 2p⁴', stateSTP: 'Gas', meltingPoint: '-218.79 °C (54.36 K)', boilingPoint: '-182.95 °C (90.20 K)', row: 2, column: 16 },
+            { id: 'F', atomicNumber: 9, symbol: 'F', name: 'Fluorine', atomicMass: 18.998, group: '17', period: '2', type: 'Halogen', electronConfig: '[He] 2s² 2p⁵', stateSTP: 'Gas', meltingPoint: '-219.62 °C (53.53 K)', boilingPoint: '-188.12 °C (85.03 K)', row: 2, column: 17 },
+            { id: 'Ne', atomicNumber: 10, symbol: 'Ne', name: 'Neon', atomicMass: 20.180, group: '18', period: '2', type: 'Noble Gas', electronConfig: '[He] 2s² 2p⁶', stateSTP: 'Gas', meltingPoint: '-248.59 °C (24.56 K)', boilingPoint: '-246.08 °C (27.07 K)', row: 2, column: 18 },
+            { id: 'Na', atomicNumber: 11, symbol: 'Na', name: 'Sodium', atomicMass: 22.990, group: '1', period: '3', type: 'Alkali Metal', electronConfig: '[Ne] 3s¹', stateSTP: 'Solid', meltingPoint: '97.79 °C (370.94 K)', boilingPoint: '883 °C (1156 K)', row: 3, column: 1 },
+            { id: 'Mg', atomicNumber: 12, symbol: 'Mg', name: 'Magnesium', atomicMass: 24.305, group: '2', period: '3', type: 'Alkaline Earth Metal', electronConfig: '[Ne] 3s²', stateSTP: 'Solid', meltingPoint: '650 °C (923 K)', boilingPoint: '1090 °C (1363 K)', row: 3, column: 2 },
+            { id: 'Al', atomicNumber: 13, symbol: 'Al', name: 'Aluminum', atomicMass: 26.982, group: '13', period: '3', type: 'Basic Metal', electronConfig: '[Ne] 3s² 3p¹', stateSTP: 'Solid', meltingPoint: '660.32 °C (933.47 K)', boilingPoint: '2519 °C (2792 K)', row: 3, column: 13 },
+            { id: 'Si', atomicNumber: 14, symbol: 'Si', name: 'Silicon', atomicMass: 28.085, group: '14', period: '3', type: 'Semimetal', electronConfig: '[Ne] 3s² 3p²', stateSTP: 'Solid', meltingPoint: '1414 °C (1687 K)', boilingPoint: '3265 °C (3538 K)', row: 3, column: 14 },
+            { id: 'P', atomicNumber: 15, symbol: 'P', name: 'Phosphorus', atomicMass: 30.974, group: '15', period: '3', type: 'Nonmetal', electronConfig: '[Ne] 3s² 3p³', stateSTP: 'Solid', meltingPoint: '44.1 °C (317.3 K)', boilingPoint: '280.5 °C (553.7 K)', row: 3, column: 15 },
+            { id: 'S', atomicNumber: 16, symbol: 'S', name: 'Sulfur', atomicMass: 32.06, group: '16', period: '3', type: 'Nonmetal', electronConfig: '[Ne] 3s² 3p⁴', stateSTP: 'Solid', meltingPoint: '115.21 °C (388.36 K)', boilingPoint: '444.6 °C (717.8 K)', row: 3, column: 16 },
+            { id: 'Cl', atomicNumber: 17, symbol: 'Cl', name: 'Chlorine', atomicMass: 35.45, group: '17', period: '3', type: 'Halogen', electronConfig: '[Ne] 3s² 3p⁵', stateSTP: 'Gas', meltingPoint: '-101.5 °C (171.7 K)', boilingPoint: '-34.04 °C (239.11 K)', row: 3, column: 17 },
+            { id: 'Ar', atomicNumber: 18, symbol: 'Ar', name: 'Argon', atomicMass: 39.948, group: '18', period: '3', type: 'Noble Gas', electronConfig: '[Ne] 3s² 3p⁶', stateSTP: 'Gas', meltingPoint: '-189.34 °C (83.81 K)', boilingPoint: '-185.84 °C (87.31 K)', row: 3, column: 18 },
+            { id: 'K', atomicNumber: 19, symbol: 'K', name: 'Potassium', atomicMass: 39.098, group: '1', period: '4', type: 'Alkali Metal', electronConfig: '[Ar] 4s¹', stateSTP: 'Solid', meltingPoint: '63.5 °C (336.7 K)', boilingPoint: '759 °C (1032 K)', row: 4, column: 1 },
+            { id: 'Ca', atomicNumber: 20, symbol: 'Ca', name: 'Calcium', atomicMass: 40.078, group: '2', period: '4', type: 'Alkaline Earth Metal', electronConfig: '[Ar] 4s²', stateSTP: 'Solid', meltingPoint: '842 °C (1115 K)', boilingPoint: '1484 °C (1757 K)', row: 4, column: 2 },
+            { id: 'Sc', atomicNumber: 21, symbol: 'Sc', name: 'Scandium', atomicMass: 44.956, group: '3', period: '4', type: 'Transition Metal', electronConfig: '[Ar] 3d¹ 4s²', stateSTP: 'Solid', meltingPoint: '1541 °C (1814 K)', boilingPoint: '2836 °C (3109 K)', row: 4, column: 3 },
+            { id: 'Ti', atomicNumber: 22, symbol: 'Ti', name: 'Titanium', atomicMass: 47.867, group: '4', period: '4', type: 'Transition Metal', electronConfig: '[Ar] 3d² 4s²', stateSTP: 'Solid', meltingPoint: '1668 °C (1941 K)', boilingPoint: '3287 °C (3560 K)', row: 4, column: 4 },
+            { id: 'V', atomicNumber: 23, symbol: 'V', name: 'Vanadium', atomicMass: 50.942, group: '5', period: '4', type: 'Transition Metal', electronConfig: '[Ar] 3d³ 4s²', stateSTP: 'Solid', meltingPoint: '1910 °C (2183 K)', boilingPoint: '3407 °C (3680 K)', row: 4, column: 5 },
+            { id: 'Cr', atomicNumber: 24, symbol: 'Cr', name: 'Chromium', atomicMass: 51.996, group: '6', period: '4', type: 'Transition Metal', electronConfig: '[Ar] 3d⁵ 4s¹', stateSTP: 'Solid', meltingPoint: '1857 °C (2130 K)', boilingPoint: '2672 °C (2945 K)', row: 4, column: 6 },
+            { id: 'Mn', atomicNumber: 25, symbol: 'Mn', name: 'Manganese', atomicMass: 54.938, group: '7', period: '4', type: 'Transition Metal', electronConfig: '[Ar] 3d⁵ 4s²', stateSTP: 'Solid', meltingPoint: '1246 °C (1519 K)', boilingPoint: '2061 °C (2334 K)', row: 4, column: 7 },
+            { id: 'Fe', atomicNumber: 26, symbol: 'Fe', name: 'Iron', atomicMass: 55.845, group: '8', period: '4', type: 'Transition Metal', electronConfig: '[Ar] 3d⁶ 4s²', stateSTP: 'Solid', meltingPoint: '1538 °C (1811 K)', boilingPoint: '2862 °C (3135 K)', row: 4, column: 8 },
+            { id: 'Co', atomicNumber: 27, symbol: 'Co', name: 'Cobalt', atomicMass: 58.933, group: '9', period: '4', type: 'Transition Metal', electronConfig: '[Ar] 3d⁷ 4s²', stateSTP: 'Solid', meltingPoint: '1495 °C (1768 K)', boilingPoint: '2927 °C (3200 K)', row: 4, column: 9 },
+            { id: 'Ni', atomicNumber: 28, symbol: 'Ni', name: 'Nickel', atomicMass: 58.693, group: '10', period: '4', type: 'Transition Metal', electronConfig: '[Ar] 3d⁸ 4s²', stateSTP: 'Solid', meltingPoint: '1455 °C (1728 K)', boilingPoint: '2913 °C (3186 K)', row: 4, column: 10 },
+            { id: 'Cu', atomicNumber: 29, symbol: 'Cu', name: 'Copper', atomicMass: 63.546, group: '11', period: '4', type: 'Transition Metal', electronConfig: '[Ar] 3d¹⁰ 4s¹', stateSTP: 'Solid', meltingPoint: '1084.62 °C (1357.77 K)', boilingPoint: '2562 °C (2835 K)', row: 4, column: 11 },
+            { id: 'Zn', atomicNumber: 30, symbol: 'Zn', name: 'Zinc', atomicMass: 65.38, group: '12', period: '4', type: 'Basic Metal', electronConfig: '[Ar] 3d¹⁰ 4s²', stateSTP: 'Solid', meltingPoint: '419.53 °C (692.68 K)', boilingPoint: '907 °C (1180 K)', row: 4, column: 12 },
+            { id: 'Ga', atomicNumber: 31, symbol: 'Ga', name: 'Gallium', atomicMass: 69.723, group: '13', period: '4', type: 'Basic Metal', electronConfig: '[Ar] 3d¹⁰ 4s² 4p¹', stateSTP: 'Solid', meltingPoint: '29.76 °C (302.91 K)', boilingPoint: '2204 °C (2477 K)', row: 4, column: 13 },
+            { id: 'Ge', atomicNumber: 32, symbol: 'Ge', name: 'Germanium', atomicMass: 72.63, group: '14', period: '4', type: 'Semimetal', electronConfig: '[Ar] 3d¹⁰ 4s² 4p²', stateSTP: 'Solid', meltingPoint: '938.25 °C (1211.40 K)', boilingPoint: '2833 °C (3106 K)', row: 4, column: 14 },
+            { id: 'As', atomicNumber: 33, symbol: 'As', name: 'Arsenic', atomicMass: 74.922, group: '15', period: '4', type: 'Semimetal', electronConfig: '[Ar] 3d¹⁰ 4s² 4p³', stateSTP: 'Solid', meltingPoint: '817 °C (1090 K) (subl.)', boilingPoint: '614 °C (887 K) (subl.)', row: 4, column: 15 },
+            { id: 'Se', atomicNumber: 34, symbol: 'Se', name: 'Selenium', atomicMass: 78.971, group: '16', period: '4', type: 'Nonmetal', electronConfig: '[Ar] 3d¹⁰ 4s² 4p⁴', stateSTP: 'Solid', meltingPoint: '221 °C (494 K)', boilingPoint: '685 °C (958 K)', row: 4, column: 16 },
+            { id: 'Br', atomicNumber: 35, symbol: 'Br', name: 'Bromine', atomicMass: 79.904, group: '17', period: '4', type: 'Halogen', electronConfig: '[Ar] 3d¹⁰ 4s² 4p⁵', stateSTP: 'Liquid', meltingPoint: '-7.2 °C (265.9 K)', boilingPoint: '58.8 °C (332.0 K)', row: 4, column: 17 },
+            { id: 'Kr', atomicNumber: 36, symbol: 'Kr', name: 'Krypton', atomicMass: 83.798, group: '18', period: '4', type: 'Noble Gas', electronConfig: '[Ar] 3d¹⁰ 4s² 4p⁶', stateSTP: 'Gas', meltingPoint: '-157.36 °C (115.79 K)', boilingPoint: '-153.22 °C (119.93 K)', row: 4, column: 18 },
+            { id: 'Rb', atomicNumber: 37, symbol: 'Rb', name: 'Rubidium', atomicMass: 85.468, group: '1', period: '5', type: 'Alkali Metal', electronConfig: '[Kr] 5s¹', stateSTP: 'Solid', meltingPoint: '39.31 °C (312.46 K)', boilingPoint: '688 °C (961 K)', row: 5, column: 1 },
+            { id: 'Sr', atomicNumber: 38, symbol: 'Sr', name: 'Strontium', atomicMass: 87.62, group: '2', period: '5', type: 'Alkaline Earth Metal', electronConfig: '[Kr] 5s²', stateSTP: 'Solid', meltingPoint: '777 °C (1050 K)', boilingPoint: '1382 °C (1655 K)', row: 5, column: 2 },
+            { id: 'Y', atomicNumber: 39, symbol: 'Y', name: 'Yttrium', atomicMass: 88.906, group: '3', period: '5', type: 'Transition Metal', electronConfig: '[Kr] 4d¹ 5s²', stateSTP: 'Solid', meltingPoint: '1522 °C (1795 K)', boilingPoint: '3338 °C (3611 K)', row: 5, column: 3 },
+            { id: 'Zr', atomicNumber: 40, symbol: 'Zr', name: 'Zirconium', atomicMass: 91.224, group: '4', period: '5', type: 'Transition Metal', electronConfig: '[Kr] 4d² 5s²', stateSTP: 'Solid', meltingPoint: '1857 °C (2130 K)', boilingPoint: '4409 °C (4682 K)', row: 5, column: 4 },
+            { id: 'Nb', atomicNumber: 41, symbol: 'Nb', name: 'Niobium', atomicMass: 92.906, group: '5', period: '5', type: 'Transition Metal', electronConfig: '[Kr] 4d⁴ 5s¹', stateSTP: 'Solid', meltingPoint: '2477 °C (2750 K)', boilingPoint: '4744 °C (5017 K)', row: 5, column: 5 },
+            { id: 'Mo', atomicNumber: 42, symbol: 'Mo', name: 'Molybdenum', atomicMass: 95.95, group: '6', period: '5', type: 'Transition Metal', electronConfig: '[Kr] 4d⁵ 5s¹', stateSTP: 'Solid', meltingPoint: '2623 °C (2896 K)', boilingPoint: '4639 °C (4912 K)', row: 5, column: 6 },
+            { id: 'Tc', atomicNumber: 43, symbol: 'Tc', name: 'Technetium', atomicMass: 98, group: '7', period: '5', type: 'Transition Metal', electronConfig: '[Kr] 4d⁵ 5s²', stateSTP: 'Solid', meltingPoint: '2157 °C (2430 K)', boilingPoint: '4265 °C (4538 K)', row: 5, column: 7 },
+            { id: 'Ru', atomicNumber: 44, symbol: 'Ru', name: 'Ruthenium', atomicMass: 101.07, group: '8', period: '5', type: 'Transition Metal', electronConfig: '[Kr] 4d⁷ 5s¹', stateSTP: 'Solid', meltingPoint: '2334 °C (2607 K)', boilingPoint: '4150 °C (4423 K)', row: 5, column: 8 },
+            { id: 'Rh', atomicNumber: 45, symbol: 'Rh', name: 'Rhodium', atomicMass: 102.91, group: '9', period: '5', type: 'Transition Metal', electronConfig: '[Kr] 4d⁸ 5s¹', stateSTP: 'Solid', meltingPoint: '1964 °C (2237 K)', boilingPoint: '3695 °C (3968 K)', row: 5, column: 9 },
+            { id: 'Pd', atomicNumber: 46, symbol: 'Pd', name: 'Palladium', atomicMass: 106.42, group: '10', period: '5', type: 'Transition Metal', electronConfig: '[Kr] 4d¹⁰', stateSTP: 'Solid', meltingPoint: '1554.9 °C (1828.0 K)', boilingPoint: '2963 °C (3236 K)', row: 5, column: 10 },
+            { id: 'Ag', atomicNumber: 47, symbol: 'Ag', name: 'Silver', atomicMass: 107.87, group: '11', period: '5', type: 'Transition Metal', electronConfig: '[Kr] 4d¹⁰ 5s¹', stateSTP: 'Solid', meltingPoint: '961.78 °C (1234.93 K)', boilingPoint: '2162 °C (2435 K)', row: 5, column: 11 },
+            { id: 'Cd', atomicNumber: 48, symbol: 'Cd', name: 'Cadmium', atomicMass: 112.41, group: '12', period: '5', type: 'Basic Metal', electronConfig: '[Kr] 4d¹⁰ 5s²', stateSTP: 'Solid', meltingPoint: '321.07 °C (594.22 K)', boilingPoint: '767 °C (1040 K)', row: 5, column: 12 },
+            { id: 'In', atomicNumber: 49, symbol: 'In', name: 'Indium', atomicMass: 114.82, group: '13', period: '5', type: 'Basic Metal', electronConfig: '[Kr] 4d¹⁰ 5s² 5p¹', stateSTP: 'Solid', meltingPoint: '156.60 °C (429.75 K)', boilingPoint: '2072 °C (2345 K)', row: 5, column: 13 },
+            { id: 'Sn', atomicNumber: 50, symbol: 'Sn', name: 'Tin', atomicMass: 118.71, group: '14', period: '5', type: 'Basic Metal', electronConfig: '[Kr] 4d¹⁰ 5s² 5p²', stateSTP: 'Solid', meltingPoint: '231.93 °C (505.08 K)', boilingPoint: '2602 °C (2875 K)', row: 5, column: 14 },
+            { id: 'Sb', atomicNumber: 51, symbol: 'Sb', name: 'Antimony', atomicMass: 121.76, group: '15', period: '5', type: 'Semimetal', electronConfig: '[Kr] 4d¹⁰ 5s² 5p³', stateSTP: 'Solid', meltingPoint: '630.63 °C (903.78 K)', boilingPoint: '1587 °C (1860 K)', row: 5, column: 15 },
+            { id: 'Te', atomicNumber: 52, symbol: 'Te', name: 'Tellurium', atomicMass: 127.60, group: '16', period: '5', type: 'Semimetal', electronConfig: '[Kr] 4d¹⁰ 5s² 5p⁴', stateSTP: 'Solid', meltingPoint: '449.51 °C (722.66 K)', boilingPoint: '988 °C (1261 K)', row: 5, column: 16 },
+            { id: 'I', atomicNumber: 53, symbol: 'I', name: 'Iodine', atomicMass: 126.90, group: '17', period: '5', type: 'Halogen', electronConfig: '[Kr] 4d¹⁰ 5s² 5p⁵', stateSTP: 'Solid', meltingPoint: '113.7 °C (386.9 K)', boilingPoint: '184.3 °C (457.5 K)', row: 5, column: 17 },
+            { id: 'Xe', atomicNumber: 54, symbol: 'Xe', name: 'Xenon', atomicMass: 131.29, group: '18', period: '5', type: 'Noble Gas', electronConfig: '[Kr] 4d¹⁰ 5s² 5p⁶', stateSTP: 'Gas', meltingPoint: '-111.7 °C (161.4 K)', boilingPoint: '-108.1 °C (165.1 K)', row: 5, column: 18 },
+            { id: 'Cs', atomicNumber: 55, symbol: 'Cs', name: 'Cesium', atomicMass: 132.91, group: '1', period: '6', type: 'Alkali Metal', electronConfig: '[Xe] 6s¹', stateSTP: 'Solid', meltingPoint: '28.44 °C (301.59 K)', boilingPoint: '671 °C (944 K)', row: 6, column: 1 },
+            { id: 'Ba', atomicNumber: 56, symbol: 'Ba', name: 'Barium', atomicMass: 137.33, group: '2', period: '6', type: 'Alkaline Earth Metal', electronConfig: '[Xe] 6s²', stateSTP: 'Solid', meltingPoint: '727 °C (1000 K)', boilingPoint: '1897 °C (2170 K)', row: 6, column: 2 },
+            // Lanthanides (57-71) - Placeholder in main table, actual elements in series
+            { id: '57-71', atomicNumber: null, symbol: '57-71', name: 'Lanthanides', atomicMass: null, group: '3', period: '6', type: 'Lanthanide', electronConfig: null, stateSTP: null, meltingPoint: null, boilingPoint: null, row: 6, column: 3, isPlaceholder: true },
+            { id: 'Hf', atomicNumber: 72, symbol: 'Hf', name: 'Hafnium', atomicMass: 178.49, group: '4', period: '6', type: 'Transition Metal', electronConfig: '[Xe] 4f¹⁴ 5d² 6s²', stateSTP: 'Solid', meltingPoint: '2233 °C (2506 K)', boilingPoint: '4603 °C (4876 K)', row: 6, column: 4 },
+            { id: 'Ta', atomicNumber: 73, symbol: 'Ta', name: 'Tantalum', atomicMass: 180.95, group: '5', period: '6', type: 'Transition Metal', electronConfig: '[Xe] 4f¹⁴ 5d³ 6s²', stateSTP: 'Solid', meltingPoint: '3017 °C (3290 K)', boilingPoint: '5458 °C (5731 K)', row: 6, column: 5 },
+            { id: 'W', atomicNumber: 74, symbol: 'W', name: 'Tungsten', atomicMass: 183.84, group: '6', period: '6', type: 'Transition Metal', electronConfig: '[Xe] 4f¹⁴ 5d⁴ 6s²', stateSTP: 'Solid', meltingPoint: '3422 °C (3695 K)', boilingPoint: '5930 °C (6203 K)', row: 6, column: 6 },
+            { id: 'Re', atomicNumber: 75, symbol: 'Re', name: 'Rhenium', atomicMass: 186.21, group: '7', period: '6', type: 'Transition Metal', electronConfig: '[Xe] 4f¹⁴ 5d⁵ 6s²', stateSTP: 'Solid', meltingPoint: '3186 °C (3459 K)', boilingPoint: '5596 °C (5869 K)', row: 6, column: 7 },
+            { id: 'Os', atomicNumber: 76, symbol: 'Os', name: 'Osmium', atomicMass: 190.23, group: '8', period: '6', type: 'Transition Metal', electronConfig: '[Xe] 4f¹⁴ 5d⁶ 6s²', stateSTP: 'Solid', meltingPoint: '3033 °C (3306 K)', boilingPoint: '5012 °C (5285 K)', row: 6, column: 8 },
+            { id: 'Ir', atomicNumber: 77, symbol: 'Ir', name: 'Iridium', atomicMass: 192.22, group: '9', period: '6', type: 'Transition Metal', electronConfig: '[Xe] 4f¹⁴ 5d⁷ 6s²', stateSTP: 'Solid', meltingPoint: '2446 °C (2719 K)', boilingPoint: '4428 °C (4701 K)', row: 6, column: 9 },
+            { id: 'Pt', atomicNumber: 78, symbol: 'Pt', name: 'Platinum', atomicMass: 195.08, group: '10', period: '6', type: 'Transition Metal', electronConfig: '[Xe] 4f¹⁴ 5d⁹ 6s¹', stateSTP: 'Solid', meltingPoint: '1768.3 °C (2041.4 K)', boilingPoint: '3825 °C (4098 K)', row: 6, column: 10 },
+            { id: 'Au', atomicNumber: 79, symbol: 'Au', name: 'Gold', atomicMass: 196.97, group: '11', period: '6', type: 'Transition Metal', electronConfig: '[Xe] 4f¹⁴ 5d¹⁰ 6s¹', stateSTP: 'Solid', meltingPoint: '1064.18 °C (1337.33 K)', boilingPoint: '2856 °C (3129 K)', row: 6, column: 11 },
+            { id: 'Hg', atomicNumber: 80, symbol: 'Hg', name: 'Mercury', atomicMass: 200.59, group: '12', period: '6', type: 'Basic Metal', electronConfig: '[Xe] 4f¹⁴ 5d¹⁰ 6s²', stateSTP: 'Liquid', meltingPoint: '-38.83 °C (234.32 K)', boilingPoint: '356.73 °C (629.88 K)', row: 6, column: 12 },
+            { id: 'Tl', atomicNumber: 81, symbol: 'Tl', name: 'Thallium', atomicMass: 204.38, group: '13', period: '6', type: 'Basic Metal', electronConfig: '[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p¹', stateSTP: 'Solid', meltingPoint: '304 °C (577 K)', boilingPoint: '1473 °C (1746 K)', row: 6, column: 13 },
+            { id: 'Pb', atomicNumber: 82, symbol: 'Pb', name: 'Lead', atomicMass: 207.2, group: '14', period: '6', type: 'Basic Metal', electronConfig: '[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p²', stateSTP: 'Solid', meltingPoint: '327.46 °C (600.61 K)', boilingPoint: '1749 °C (2022 K)', row: 6, column: 14 },
+            { id: 'Bi', atomicNumber: 83, symbol: 'Bi', name: 'Bismuth', atomicMass: 208.98, group: '15', period: '6', type: 'Basic Metal', electronConfig: '[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p³', stateSTP: 'Solid', meltingPoint: '271.4 °C (544.5 K)', boilingPoint: '1564 °C (1837 K)', row: 6, column: 15 },
+            { id: 'Po', atomicNumber: 84, symbol: 'Po', name: 'Polonium', atomicMass: 209, group: '16', period: '6', type: 'Semimetal', electronConfig: '[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p⁴', stateSTP: 'Solid', meltingPoint: '254 °C (527 K)', boilingPoint: '962 °C (1235 K)', row: 6, column: 16 },
+            { id: 'At', atomicNumber: 85, symbol: 'At', name: 'Astatine', atomicMass: 210, group: '17', period: '6', type: 'Halogen', electronConfig: '[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p⁵', stateSTP: 'Solid', meltingPoint: '302 °C (575 K)', boilingPoint: '337 °C (610 K)', row: 6, column: 17 },
+            { id: 'Rn', atomicNumber: 86, symbol: 'Rn', name: 'Radon', atomicMass: 222, group: '18', period: '6', type: 'Noble Gas', electronConfig: '[Xe] 4f¹⁴ 5d¹⁰ 6s² 6p⁶', stateSTP: 'Gas', meltingPoint: '-71 °C (202 K)', boilingPoint: '-61.7 °C (211.5 K)', row: 6, column: 18 },
+            { id: 'Fr', atomicNumber: 87, symbol: 'Fr', name: 'Francium', atomicMass: 223, group: '1', period: '7', type: 'Alkali Metal', electronConfig: '[Rn] 7s¹', stateSTP: 'Solid', meltingPoint: '27 °C (300 K)', boilingPoint: '677 °C (950 K)', row: 7, column: 1 },
+            { id: 'Ra', atomicNumber: 88, symbol: 'Ra', name: 'Radium', atomicMass: 226, group: '2', period: '7', type: 'Alkaline Earth Metal', electronConfig: '[Rn] 7s²', stateSTP: 'Solid', meltingPoint: '700 °C (973 K)', boilingPoint: '1737 °C (2010 K)', row: 7, column: 2 },
+            // Actinides (89-103) - Placeholder in main table, actual elements in series
+            { id: '89-103', atomicNumber: null, symbol: '89-103', name: 'Actinides', atomicMass: null, group: '3', period: '7', type: 'Actinide', electronConfig: null, stateSTP: null, meltingPoint: null, boilingPoint: null, row: 7, column: 3, isPlaceholder: true },
+            { id: 'Rf', atomicNumber: 104, symbol: 'Rf', name: 'Rutherfordium', atomicMass: 267, group: '4', period: '7', type: 'Transition Metal', electronConfig: '[Rn] 5f¹⁴ 6d² 7s²', stateSTP: 'Solid', meltingPoint: 'N/A', boilingPoint: 'N/A', row: 7, column: 4 },
+            { id: 'Db', atomicNumber: 105, symbol: 'Db', name: 'Dubnium', atomicMass: 268, group: '5', period: '7', type: 'Transition Metal', electronConfig: '[Rn] 5f¹⁴ 6d³ 7s²', stateSTP: 'Solid', meltingPoint: 'N/A', boilingPoint: 'N/A', row: 7, column: 5 },
+            { id: 'Sg', atomicNumber: 106, symbol: 'Sg', name: 'Seaborgium', atomicMass: 269, group: '6', period: '7', type: 'Transition Metal', electronConfig: '[Rn] 5f¹⁴ 6d⁴ 7s²', stateSTP: 'Solid', meltingPoint: 'N/A', boilingPoint: 'N/A', row: 7, column: 6 },
+            { id: 'Bh', atomicNumber: 107, symbol: 'Bh', name: 'Bohrium', atomicMass: 270, group: '7', period: '7', type: 'Transition Metal', electronConfig: '[Rn] 5f¹⁴ 6d⁵ 7s²', stateSTP: 'Solid', meltingPoint: 'N/A', boilingPoint: 'N/A', row: 7, column: 7 },
+            { id: 'Hs', atomicNumber: 108, symbol: 'Hs', name: 'Hassium', atomicMass: 269, group: '8', period: '7', type: 'Transition Metal', electronConfig: '[Rn] 5f¹⁴ 6d⁶ 7s²', stateSTP: 'Solid', meltingPoint: 'N/A', boilingPoint: 'N/A', row: 7, column: 8 },
+            { id: 'Mt', atomicNumber: 109, symbol: 'Mt', name: 'Meitnerium', atomicMass: 278, group: '9', period: '7', type: 'Transition Metal', electronConfig: '[Rn] 5f¹⁴ 6d⁷ 7s²', stateSTP: 'Solid', meltingPoint: 'N/A', boilingPoint: 'N/A', row: 7, column: 9 },
+            { id: 'Ds', atomicNumber: 110, symbol: 'Ds', name: 'Darmstadtium', atomicMass: 281, group: '10', period: '7', type: 'Transition Metal', electronConfig: '[Rn] 5f¹⁴ 6d⁹ 7s¹', stateSTP: 'Solid', meltingPoint: 'N/A', boilingPoint: 'N/A', row: 7, column: 10 },
+            { id: 'Rg', atomicNumber: 111, symbol: 'Rg', name: 'Roentgenium', atomicMass: 282, group: '11', period: '7', type: 'Transition Metal', electronConfig: '[Rn] 5f¹⁴ 6d¹⁰ 7s¹', stateSTP: 'Solid', meltingPoint: 'N/A', boilingPoint: 'N/A', row: 7, column: 11 },
+            { id: 'Cn', atomicNumber: 112, symbol: 'Cn', name: 'Copernicium', atomicMass: 285, group: '12', period: '7', type: 'Basic Metal', electronConfig: '[Rn] 5f¹⁴ 6d¹⁰ 7s²', stateSTP: 'Liquid', meltingPoint: 'N/A', boilingPoint: 'N/A', row: 7, column: 12 },
+            { id: 'Nh', atomicNumber: 113, symbol: 'Nh', name: 'Nihonium', atomicMass: 286, group: '13', period: '7', type: 'Basic Metal', electronConfig: '[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p¹', stateSTP: 'Solid', meltingPoint: 'N/A', boilingPoint: 'N/A', row: 7, column: 13 },
+            { id: 'Fl', atomicNumber: 114, symbol: 'Fl', name: 'Flerovium', atomicMass: 289, group: '14', period: '7', type: 'Basic Metal', electronConfig: '[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p²', stateSTP: 'Solid', meltingPoint: 'N/A', boilingPoint: 'N/A', row: 7, column: 14 },
+            { id: 'Mc', atomicNumber: 115, symbol: 'Mc', name: 'Moscovium', atomicMass: 290, group: '15', period: '7', type: 'Basic Metal', electronConfig: '[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p³', stateSTP: 'Solid', meltingPoint: 'N/A', boilingPoint: 'N/A', row: 7, column: 15 },
+            { id: 'Lv', atomicNumber: 116, symbol: 'Lv', name: 'Livermorium', atomicMass: 293, group: '16', period: '7', type: 'Basic Metal', electronConfig: '[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p⁴', stateSTP: 'Solid', meltingPoint: 'N/A', boilingPoint: 'N/A', row: 7, column: 16 },
+            { id: 'Ts', atomicNumber: 117, symbol: 'Ts', name: 'Tennessine', atomicMass: 294, group: '17', period: '7', type: 'Halogen', electronConfig: '[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p⁵', stateSTP: 'Solid', meltingPoint: 'N/A', boilingPoint: 'N/A', row: 7, column: 17 },
+            { id: 'Og', atomicNumber: 118, symbol: 'Og', name: 'Oganesson', atomicMass: 294, group: '18', period: '7', type: 'Noble Gas', electronConfig: '[Rn] 5f¹⁴ 6d¹⁰ 7s² 7p⁶', stateSTP: 'Gas', meltingPoint: 'N/A', boilingPoint: 'N/A', row: 7, column: 18 },
+
+            // Lanthanide Series (separate block)
+            { id: 'La', atomicNumber: 57, symbol: 'La', name: 'Lanthanum', atomicMass: 138.91, group: '3', period: '6', type: 'Lanthanide', electronConfig: '[Xe] 5d¹ 6s²', stateSTP: 'Solid', meltingPoint: '920 °C (1193 K)', boilingPoint: '3464 °C (3737 K)', series: 'lanthanide', row: 1, column: 1 },
+            { id: 'Ce', atomicNumber: 58, symbol: 'Ce', name: 'Cerium', atomicMass: 140.12, group: '3', period: '6', type: 'Lanthanide', electronConfig: '[Xe] 4f¹ 5d¹ 6s²', stateSTP: 'Solid', meltingPoint: '795 °C (1068 K)', boilingPoint: '3443 °C (3716 K)', series: 'lanthanide', row: 1, column: 2 },
+            { id: 'Pr', atomicNumber: 59, symbol: 'Pr', name: 'Praseodymium', atomicMass: 140.91, group: '3', period: '6', type: 'Lanthanide', electronConfig: '[Xe] 4f³ 6s²', stateSTP: 'Solid', meltingPoint: '935 °C (1208 K)', boilingPoint: '3520 °C (3793 K)', series: 'lanthanide', row: 1, column: 3 },
+            { id: 'Nd', atomicNumber: 60, symbol: 'Nd', name: 'Neodymium', atomicMass: 144.24, group: '3', period: '6', type: 'Lanthanide', electronConfig: '[Xe] 4f⁴ 6s²', stateSTP: 'Solid', meltingPoint: '1021 °C (1294 K)', boilingPoint: '3074 °C (3347 K)', series: 'lanthanide', row: 1, column: 4 },
+            { id: 'Pm', atomicNumber: 61, symbol: 'Pm', name: 'Promethium', atomicMass: 145, group: '3', period: '6', type: 'Lanthanide', electronConfig: '[Xe] 4f⁵ 6s²', stateSTP: 'Solid', meltingPoint: '1042 °C (1315 K)', boilingPoint: '3000 °C (3273 K)', series: 'lanthanide', row: 1, column: 5 },
+            { id: 'Sm', atomicNumber: 62, symbol: 'Sm', name: 'Samarium', atomicMass: 150.36, group: '3', period: '6', type: 'Lanthanide', electronConfig: '[Xe] 4f⁶ 6s²', stateSTP: 'Solid', meltingPoint: '1074 °C (1347 K)', boilingPoint: '1794 °C (2067 K)', series: 'lanthanide', row: 1, column: 6 },
+            { id: 'Eu', atomicNumber: 63, symbol: 'Eu', name: 'Europium', atomicMass: 151.96, group: '3', period: '6', type: 'Lanthanide', electronConfig: '[Xe] 4f⁷ 6s²', stateSTP: 'Solid', meltingPoint: '822 °C (1095 K)', boilingPoint: '1529 °C (1802 K)', series: 'lanthanide', row: 1, column: 7 },
+            { id: 'Gd', atomicNumber: 64, symbol: 'Gd', name: 'Gadolinium', atomicMass: 157.25, group: '3', period: '6', type: 'Lanthanide', electronConfig: '[Xe] 4f⁷ 5d¹ 6s²', stateSTP: 'Solid', meltingPoint: '1312 °C (1585 K)', boilingPoint: '3273 °C (3546 K)', series: 'lanthanide', row: 1, column: 8 },
+            { id: 'Tb', atomicNumber: 65, symbol: 'Tb', name: 'Terbium', atomicMass: 158.93, group: '3', period: '6', type: 'Lanthanide', electronConfig: '[Xe] 4f⁹ 6s²', stateSTP: 'Solid', meltingPoint: '1356 °C (1629 K)', boilingPoint: '3230 °C (3503 K)', series: 'lanthanide', row: 1, column: 9 },
+            { id: 'Dy', atomicNumber: 66, symbol: 'Dy', name: 'Dysprosium', atomicMass: 162.50, group: '3', period: '6', type: 'Lanthanide', electronConfig: '[Xe] 4f¹⁰ 6s²', stateSTP: 'Solid', meltingPoint: '1412 °C (1685 K)', boilingPoint: '2567 °C (2840 K)', series: 'lanthanide', row: 1, column: 10 },
+            { id: 'Ho', atomicNumber: 67, symbol: 'Ho', name: 'Holmium', atomicMass: 164.93, group: '3', period: '6', type: 'Lanthanide', electronConfig: '[Xe] 4f¹¹ 6s²', stateSTP: 'Solid', meltingPoint: '1472 °C (1745 K)', boilingPoint: '2695 °C (2968 K)', series: 'lanthanide', row: 1, column: 11 },
+            { id: 'Er', atomicNumber: 68, symbol: 'Er', name: 'Erbium', atomicMass: 167.26, group: '3', period: '6', type: 'Lanthanide', electronConfig: '[Xe] 4f¹² 6s²', stateSTP: 'Solid', meltingPoint: '1529 °C (1802 K)', boilingPoint: '2868 °C (3141 K)', series: 'lanthanide', row: 1, column: 12 },
+            { id: 'Tm', atomicNumber: 69, symbol: 'Tm', name: 'Thulium', atomicMass: 168.93, group: '3', period: '6', type: 'Lanthanide', electronConfig: '[Xe] 4f¹³ 6s²', stateSTP: 'Solid', meltingPoint: '1545 °C (1818 K)', boilingPoint: '1950 °C (2223 K)', series: 'lanthanide', row: 1, column: 13 },
+            { id: 'Yb', atomicNumber: 70, symbol: 'Yb', name: 'Ytterbium', atomicMass: 173.05, group: '3', period: '6', type: 'Lanthanide', electronConfig: '[Xe] 4f¹⁴ 6s²', stateSTP: 'Solid', meltingPoint: '819 °C (1092 K)', boilingPoint: '1196 °C (1469 K)', series: 'lanthanide', row: 1, column: 14 },
+            { id: 'Lu', atomicNumber: 71, symbol: 'Lu', name: 'Lutetium', atomicMass: 174.97, group: '3', period: '6', type: 'Lanthanide', electronConfig: '[Xe] 4f¹⁴ 5d¹ 6s²', stateSTP: 'Solid', meltingPoint: '1663 °C (1936 K)', boilingPoint: '3402 °C (3675 K)', series: 'lanthanide', row: 1, column: 15 },
+
+            // Actinide Series (separate block)
+            { id: 'Ac', atomicNumber: 89, symbol: 'Ac', name: 'Actinium', atomicMass: 227, group: '3', period: '7', type: 'Actinide', electronConfig: '[Rn] 6d¹ 7s²', stateSTP: 'Solid', meltingPoint: '1050 °C (1323 K)', boilingPoint: '3200 °C (3473 K)', series: 'actinide', row: 1, column: 1 },
+            { id: 'Th', atomicNumber: 90, symbol: 'Th', name: 'Thorium', atomicMass: 232.04, group: '3', period: '7', type: 'Actinide', electronConfig: '[Rn] 6d² 7s²', stateSTP: 'Solid', meltingPoint: '1750 °C (2023 K)', boilingPoint: '4788 °C (5061 K)', series: 'actinide', row: 1, column: 2 },
+            { id: 'Pa', atomicNumber: 91, symbol: 'Pa', name: 'Protactinium', atomicMass: 231.04, group: '3', period: '7', type: 'Actinide', electronConfig: '[Rn] 5f² 6d¹ 7s²', stateSTP: 'Solid', meltingPoint: '1568 °C (1841 K)', boilingPoint: '4027 °C (4300 K)', series: 'actinide', row: 1, column: 3 },
+            { id: 'U', atomicNumber: 92, symbol: 'U', name: 'Uranium', atomicMass: 238.03, group: '3', period: '7', type: 'Actinide', electronConfig: '[Rn] 5f³ 6d¹ 7s²', stateSTP: 'Solid', meltingPoint: '1132.2 °C (1405.3 K)', boilingPoint: '4131 °C (4404 K)', series: 'actinide', row: 1, column: 4 },
+            { id: 'Np', atomicNumber: 93, symbol: 'Np', name: 'Neptunium', atomicMass: 237, group: '3', period: '7', type: 'Actinide', electronConfig: '[Rn] 5f⁴ 6d¹ 7s²', stateSTP: 'Solid', meltingPoint: '639 °C (912 K)', boilingPoint: '4000 °C (4273 K)', series: 'actinide', row: 1, column: 5 },
+            { id: 'Pu', atomicNumber: 94, symbol: 'Pu', name: 'Plutonium', atomicMass: 244, group: '3', period: '7', type: 'Actinide', electronConfig: '[Rn] 5f⁶ 7s²', stateSTP: 'Solid', meltingPoint: '640 °C (913 K)', boilingPoint: '3228 °C (3501 K)', series: 'actinide', row: 1, column: 6 },
+            { id: 'Am', atomicNumber: 95, symbol: 'Am', name: 'Americium', atomicMass: 243, group: '3', period: '7', type: 'Actinide', electronConfig: '[Rn] 5f⁷ 7s²', stateSTP: 'Solid', meltingPoint: '1176 °C (1449 K)', boilingPoint: '2607 °C (2880 K)', series: 'actinide', row: 1, column: 7 },
+            { id: 'Cm', atomicNumber: 96, symbol: 'Cm', name: 'Curium', atomicMass: 247, group: '3', period: '7', type: 'Actinide', electronConfig: '[Rn] 5f⁷ 6d¹ 7s²', stateSTP: 'Solid', meltingPoint: '1340 °C (1613 K)', boilingPoint: '3100 °C (3373 K)', series: 'actinide', row: 1, column: 8 },
+            { id: 'Bk', atomicNumber: 97, symbol: 'Bk', name: 'Berkelium', atomicMass: 247, group: '3', period: '7', type: 'Actinide', electronConfig: '[Rn] 5f⁹ 7s²', stateSTP: 'Solid', meltingPoint: '986 °C (1259 K)', boilingPoint: 'N/A', series: 'actinide', row: 1, column: 9 },
+            { id: 'Cf', atomicNumber: 98, symbol: 'Cf', name: 'Californium', atomicMass: 251, group: '3', period: '7', type: 'Actinide', electronConfig: '[Rn] 5f¹⁰ 7s²', stateSTP: 'Solid', meltingPoint: '900 °C (1173 K)', boilingPoint: 'N/A', series: 'actinide', row: 1, column: 10 },
+            { id: 'Es', atomicNumber: 99, symbol: 'Es', name: 'Einsteinium', atomicMass: 252, group: '3', period: '7', type: 'Actinide', electronConfig: '[Rn] 5f¹¹ 7s²', stateSTP: 'Solid', meltingPoint: '860 °C (1133 K)', boilingPoint: 'N/A', series: 'actinide', row: 1, column: 11 },
+            { id: 'Fm', atomicNumber: 100, symbol: 'Fm', name: 'Fermium', atomicMass: 257, group: '3', period: '7', type: 'Actinide', electronConfig: '[Rn] 5f¹² 7s²', stateSTP: 'Solid', meltingPoint: '1527 °C (1800 K)', boilingPoint: 'N/A', series: 'actinide', row: 1, column: 12 },
+            { id: 'Md', atomicNumber: 101, symbol: 'Md', name: 'Mendelevium', atomicMass: 258, group: '3', period: '7', type: 'Actinide', electronConfig: '[Rn] 5f¹³ 7s²', stateSTP: 'Solid', meltingPoint: '827 °C (1100 K)', boilingPoint: 'N/A', series: 'actinide', row: 1, column: 13 },
+            { id: 'No', atomicNumber: 102, symbol: 'No', name: 'Nobelium', atomicMass: 259, group: '3', period: '7', type: 'Actinide', electronConfig: '[Rn] 5f¹⁴ 7s²', stateSTP: 'Solid', meltingPoint: '827 °C (1100 K)', boilingPoint: 'N/A', series: 'actinide', row: 1, column: 14 },
+            { id: 'Lr', atomicNumber: 103, symbol: 'Lr', name: 'Lawrencium', atomicMass: 262, group: '3', period: '7', type: 'Actinide', electronConfig: '[Rn] 5f¹⁴ 7s² 7p¹', stateSTP: 'Solid', meltingPoint: '1627 °C (1900 K)', boilingPoint: 'N/A', series: 'actinide', row: 1, column: 15 }
+        ];
+
+        const periodicTableContainer = document.getElementById('periodic-table');
+        const lanthanideSeriesContainer = document.getElementById('lanthanide-series');
+        const actinideSeriesContainer = document.getElementById('actinide-series');
+        const modal = document.getElementById('element-details-modal');
+        const modalTitle = document.getElementById('modal-title');
+        const modalAtomicNumber = document.getElementById('modal-atomic-number');
+        const modalAtomicMass = document.getElementById('modal-atomic-mass');
+        const modalGroup = document.getElementById('modal-group');
+        const modalPeriod = document.getElementById('modal-period');
+        const modalType = document.getElementById('modal-type');
+        const modalElectronConfig = document.getElementById('modal-electron-config');
+        const modalStateSTP = document.getElementById('modal-state-stp');
+        const modalMeltingPoint = document.getElementById('modal-melting-point');
+        const modalBoilingPoint = document.getElementById('modal-boiling-point');
+
+        const searchInput = document.getElementById('search-input');
+        const typeFilter = document.getElementById('type-filter');
+        const periodFilter = document.getElementById('period-filter');
+        const groupFilter = document.getElementById('group-filter');
+
+        /**
+         * Generates an HTML element box for a given element.
+         * @param {Object} elementData - The element's data.
+         * @returns {HTMLElement} The created element box div.
+         */
+        function createElementBox(elementData) {
+            const elementBox = document.createElement('div');
+            let typeClass = elementData.type ? `type-${elementData.type.toLowerCase().replace(/\s/g, '-')}` : 'type-unknown';
+            elementBox.className = `element-box ${typeClass}`;
+
+            if (elementData.isPlaceholder) {
+                elementBox.classList.add('placeholder');
+                elementBox.innerHTML = `<span>${elementData.symbol}</span>`;
+                elementBox.style.cursor = 'default';
+            } else {
+                elementBox.innerHTML = `
+                    <span class="atomic-number">${elementData.atomicNumber}</span>
+                    <div class="symbol">${elementData.symbol}</div>
+                    <div class="name">${elementData.name}</div>
+                `;
+                elementBox.dataset.atomicNumber = elementData.atomicNumber;
+                elementBox.addEventListener('click', () => openModal(elementData));
+            }
+            return elementBox;
+        }
+
+        
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/service-worker.js')
+                    .then(reg => {
+                        console.log('Service Worker registered:', reg.scope);
+                    })
+                    .catch(err => {
+                        console.log('Service Worker registration failed:', err);
+                    });
+            });
+        }
+
+        /**
+         * Renders the periodic table into the DOM based on filters.
+         */
+        function renderPeriodicTable() {
+            // Clear existing content
+            periodicTableContainer.innerHTML = '';
+            lanthanideSeriesContainer.innerHTML = '';
+            actinideSeriesContainer.innerHTML = '';
+
+            const searchTerm = searchInput.value.toLowerCase();
+            const selectedType = typeFilter.value;
+            const selectedPeriod = periodFilter.value;
+            const selectedGroup = groupFilter.value;
+
+            // Create a 2D array representing the periodic table grid
+            const grid = Array(7).fill(null).map(() => Array(18).fill(null));
+
+            // Populate the grid and separate elements for series
+            const mainElements = [];
+            const lanthanideElements = [];
+            const actinideElements = [];
+
+            elements.forEach(element => {
+                // Determine if element matches search term
+                const matchesSearch = searchTerm === '' ||
+                                      (element.name && element.name.toLowerCase().includes(searchTerm)) ||
+                                      (element.symbol && element.symbol.toLowerCase().includes(searchTerm));
+
+                // Determine if element matches filters (type, period, group)
+                const matchesType = selectedType === 'All' || element.type === selectedType;
+                const matchesPeriod = selectedPeriod === 'All' || element.period === selectedPeriod;
+                const matchesGroup = selectedGroup === 'All' || element.group === selectedGroup;
+
+                // Add to appropriate array if it's not a placeholder and matches filters
+                if (!element.isPlaceholder) {
+                    if (matchesSearch && matchesType && matchesPeriod && matchesGroup) {
+                        if (element.series === 'lanthanide') {
+                            lanthanideElements.push(element);
+                        } else if (element.series === 'actinide') {
+                            actinideElements.push(element);
+                        } else {
+                            // Place main elements in their grid position
+                            // Note: Adjusting row/column for 0-indexed array
+                            if (element.row && element.column) {
+                                grid[element.row - 1][element.column - 1] = element;
+                            }
+                        }
+                    } else {
+                        // If element doesn't match filter criteria,
+                        // and it's a main table element, set its grid position to null
+                        // so an empty cell is rendered, or it's simply skipped for series elements
+                        if (!element.series && element.row && element.column) {
+                            grid[element.row - 1][element.column - 1] = null;
+                        }
+                    }
+                } else {
+                    // Always render placeholders in the main grid
+                    // But if it's the Lanthanide/Actinide placeholder, only show if no filters hide it
+                    if (matchesType && matchesPeriod && matchesGroup && matchesSearch) {
+                         grid[element.row - 1][element.column - 1] = element;
+                    } else {
+                         grid[element.row - 1][element.column - 1] = null; // Hide placeholder if filters applied
+                    }
+                }
+            });
+
+
+            // Render main grid
+            for (let r = 0; r < 7; r++) {
+                for (let c = 0; c < 18; c++) {
+                    const elementData = grid[r][c];
+                    if (elementData) {
+                        periodicTableContainer.appendChild(createElementBox(elementData));
+                    } else {
+                        // Add empty cells for spacing in the grid
+                        const emptyCell = document.createElement('div');
+                        emptyCell.className = 'element-box empty-cell';
+                        periodicTableContainer.appendChild(emptyCell);
+                    }
+                }
+            }
+
+            // Render Lanthanide Series
+            lanthanideElements.sort((a, b) => a.atomicNumber - b.atomicNumber).forEach(element => {
+                lanthanideSeriesContainer.appendChild(createElementBox(element));
+            });
+            // If no lanthanides visible, hide the container.
+            if (lanthanideElements.length === 0) {
+                 lanthanideSeriesContainer.style.display = 'none';
+            } else {
+                 lanthanideSeriesContainer.style.display = 'grid'; // Restore grid display
+            }
+
+
+            // Render Actinide Series
+            actinideElements.sort((a, b) => a.atomicNumber - b.atomicNumber).forEach(element => {
+                actinideSeriesContainer.appendChild(createElementBox(element));
+            });
+            // If no actinides visible, hide the container.
+            if (actinideElements.length === 0) {
+                 actinideSeriesContainer.style.display = 'none';
+            } else {
+                 actinideSeriesContainer.style.display = 'grid'; // Restore grid display
+            }
+        }
+
+        /**
+         * Function to filter elements based on search input and dropdowns.
+         * This function is called on keyup for search and onchange for filters.
+         */
+        function filterElements() {
+            renderPeriodicTable(); // Re-render the table with current filter settings
+        }
+
+        /**
+         * Opens the modal with details of the selected element.
+         * @param {Object} elementData - The data of the clicked element.
+         */
+        function openModal(elementData) {
+            modalTitle.textContent = `${elementData.name} (${elementData.symbol})`;
+            modalAtomicNumber.textContent = elementData.atomicNumber || 'N/A';
+            modalAtomicMass.textContent = elementData.atomicMass ? elementData.atomicMass.toFixed(4) : 'N/A';
+            modalGroup.textContent = elementData.group || 'N/A';
+            modalPeriod.textContent = elementData.period || 'N/A';
+            modalType.textContent = elementData.type || 'N/A';
+            modalElectronConfig.textContent = elementData.electronConfig || 'N/A';
+            modalStateSTP.textContent = elementData.stateSTP || 'N/A';
+            modalMeltingPoint.textContent = elementData.meltingPoint || 'N/A';
+            modalBoilingPoint.textContent = elementData.boilingPoint || 'N/A';
+
+            modal.classList.add('open');
+            document.body.style.overflow = 'hidden';
+        }
+
+        /**
+         * Closes the element details modal.
+         */
+        function closeModal() {
+            modal.classList.remove('open');
+            document.body.style.overflow = '';
+        }
+
+        // Close modal if clicked outside content
+        modal.addEventListener('click', (event) => {
+            if (event.target === modal) {
+                closeModal();
+            }
+        });
+
+        // Initial render when the DOM is fully loaded
+        window.onload = renderPeriodicTable;
+    </script>
+</body>
+</html>
